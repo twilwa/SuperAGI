@@ -1,88 +1,47 @@
 namespace: superagi
-superagi:
+
+backend:
   defines: runnable
-  metadata:
-    name: superagi
-    description: >-
-      A comprehensive FastAPI application with multiple functionalities
-      including AI key validation, login and user services, cors middleware etc.
-    icon: https://emojiapi.dev/api/v1/brain.svg
   containers:
-    superagi:
+    backend:
       build: .
-  services:
-    application-port:
-      container: superagi
-      port: 8001
-      host-port: 8001
-      publish: false
-      protocol: TCP
-      description: The application runs on port 8001
-  connections:
-    postgres:
-      target: postgresql/db
-      service: postgres
-    redis:
-      target: redis/redis
-      service: redis-svc
-  variables:
-    postgres-url:
-      env: POSTGRES_URL
-      type: string
-      description: URL of the Postgres database
-      value: <- connection-hostname("postgres")
-    db-username:
-      env: DB_USERNAME
-      type: string
-      description: Username of the Postgres database
-      value: '!!!SETME!!!'
-    db-password:
-      env: DB_PASSWORD
-      type: string
-      description: Password of the Postgres database
-      value: '!!!SETME!!!'
-    db-name:
-      env: DB_NAME
-      type: string
-      description: Name of the Postgres database
-      value: '!!!SETME!!!'
-    env:
-      env: ENV
-      type: string
-      description: Environment in which the application is running
-      value: DEV
-    external-resource-dir:
-      env: EXTERNAL_RESOURCE_DIR
-      type: string
-      description: External resources directory for Celery
-      value: ./workspace
-    github-client-id:
-      env: GITHUB_CLIENT_ID
-      type: string
-      description: Client ID for GitHub login
-      value: '!!!SETME!!!'
-    github-client-secret:
-      env: GITHUB_CLIENT_SECRET
-      type: string
-      description: Client Secret for GitHub login
-      value: '!!!SETME!!!'
-    frontend-url:
-      env: FRONTEND_URL
-      type: string
-      description: URL of the frontend service
-      value: http://localhost:3000
-    jwt-secret-key:
-      env: JWT_SECRET_KEY
-      type: string
-      description: Secret key for JWT Authentication
-      value: '!!!SETME!!!'
-    jwt-expiry:
-      env: JWT_EXPIRY
-      type: string
-      description: Expiry time for JWT tokens
-      value: '200'
-    marketplace-organisation-id:
-      env: MARKETPLACE_ORGANISATION_ID
-      type: string
-      description: Organisation ID of the Marketplace
-      value: '!!!SETME!!!'
+      command: ["/app/wait-for-it.sh", "super__postgres:5432","-t","60","--","/app/entrypoint.sh"]
+
+celery:
+  defines: runnable
+  containers:
+    celery:
+      build: .
+      command: ["/app/entrypoint_celery.sh"]
+
+gui:
+  defines: runnable
+  containers:
+    gui:
+      build: ./gui
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "/api"
+
+super__redis:
+  defines: runnable
+  containers:
+    super__redis:
+      image: "redis/redis-stack-server:latest"
+
+super__postgres:
+  defines: runnable
+  containers:
+    super__postgres:
+      image: "docker.io/library/postgres:latest"
+      environment:
+        - POSTGRES_USER=superagi
+        - POSTGRES_PASSWORD=password
+        - POSTGRES_DB=super_agi_main
+
+proxy:
+  defines: runnable
+  containers:
+    proxy:
+      image: nginx:stable-alpine
+      volumes:
+        - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
