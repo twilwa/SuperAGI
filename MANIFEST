@@ -1,2 +1,2 @@
 REPO superagi
-LOAD superagi.yaml
+LOAD ./superagi/superagi.yaml
