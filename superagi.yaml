@@ -1,0 +1,9 @@
+namespace: superagi
+superagi:
+  defines: runnable
+  metadata:
+    name: superagi
+    icon: https://emojiapi.dev/api/v1/robot.svg
+  containers:
+    superagi:
+      build: .
